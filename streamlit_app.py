@@ -14,8 +14,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import streamlit as st
 
-import urllib.request
-import urllib.error
+import requests
 
 st.set_page_config(
     page_title="Meta Sentiment Intelligence",
@@ -79,18 +78,17 @@ def call_n8n_webhook(webhook_url: str) -> tuple[Optional[dict], Optional[str]]:
         return None, err
     url = webhook_url.strip().rstrip("/")
     try:
-        req = urllib.request.Request(url, method="POST", headers={"Content-Type": "application/json"}, data=json.dumps({}).encode("utf-8"))
-        with urllib.request.urlopen(req, timeout=300) as resp:
-            body = resp.read().decode("utf-8")
-            return json.loads(body) if body else {}, None
-    except urllib.error.HTTPError as e:
-        try:
-            err_body = e.read().decode("utf-8")
-        except Exception:
-            err_body = str(e)
-        return None, f"n8n returned {e.code}: {err_body[:200]}"
-    except urllib.error.URLError as e:
-        return None, f"Cannot reach n8n: {e.reason}. Is n8n running and the workflow active?"
+        resp = requests.post(url, json={}, timeout=300)
+        resp.raise_for_status()
+        body = resp.text
+        return json.loads(body) if body else {}, None
+    except requests.HTTPError as e:
+        err_body = e.response.text[:200] if e.response is not None else str(e)
+        return None, f"n8n returned {e.response.status_code}: {err_body}"
+    except requests.ConnectionError as e:
+        return None, f"Cannot reach n8n: {e}. Is n8n running and the workflow active?"
+    except requests.Timeout:
+        return None, "Request timed out. The workflow may be taking too long."
     except json.JSONDecodeError as e:
         return None, f"n8n returned invalid JSON: {e}"
     except Exception as e:
