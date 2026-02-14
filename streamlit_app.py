@@ -4,10 +4,8 @@ View reviews, analysis, generated responses; extract keywords; graphs & visualiz
 """
 
 import json
-import os
 import re
 from collections import Counter
-from pathlib import Path
 from typing import Optional
 
 import pandas as pd
@@ -24,22 +22,8 @@ st.set_page_config(
     layout="wide",
 )
 
-# Default webhook URL
-def _load_default_webhook_url() -> str:
-    url = os.environ.get("N8N_WEBHOOK_URL", "").strip()
-    if url:
-        return url
-    config_path = Path(__file__).parent / "config.json"
-    if config_path.exists():
-        try:
-            with open(config_path) as f:
-                data = json.load(f)
-                return (data.get("webhook_url") or "").strip()
-        except Exception:
-            pass
-    return ""
-
-DEFAULT_WEBHOOK_URL = _load_default_webhook_url()
+# Hardcoded webhook URL
+DEFAULT_WEBHOOK_URL = "http://localhost:5678/webhook/meta-sentiment"
 
 STOPWORDS = {
     "a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for", "of", "with",
