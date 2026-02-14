@@ -4,6 +4,7 @@ View reviews, analysis, generated responses; extract keywords; graphs & visualiz
 """
 
 import json
+import os
 import re
 from collections import Counter
 from typing import Optional
@@ -22,8 +23,19 @@ st.set_page_config(
     layout="wide",
 )
 
-# Hardcoded webhook URL
-DEFAULT_WEBHOOK_URL = "http://localhost:5678/webhook/meta-sentiment"
+# Webhook URL: from Streamlit Cloud secrets, then env, then localhost for local dev
+def _get_default_webhook_url() -> str:
+    try:
+        url = (st.secrets.get("N8N_WEBHOOK_URL") or "").strip()
+        if url:
+            return url
+    except Exception:
+        pass
+    url = (os.environ.get("N8N_WEBHOOK_URL") or "").strip()
+    return url if url else "http://localhost:5678/webhook/meta-sentiment"
+
+
+DEFAULT_WEBHOOK_URL = _get_default_webhook_url()
 
 STOPWORDS = {
     "a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for", "of", "with",
